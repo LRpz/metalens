@@ -1,0 +1,10 @@
+name: metalens-napari
+display_name: MetaLens Viewer
+contributions:
+  commands:
+    - id: metalens-napari.widget
+      python_name: MetaLens.napari.plugin:MetaLensWidget
+      title: Make MetaLens Widget
+  widgets:
+    - command: metalens-napari.widget
+      display_name: MetaLens Viewer 

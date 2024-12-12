@@ -1,10 +1,10 @@
-from setuptools import setup, find_packages
+from setuptools import setup
 
 setup(
     name='metalens',
     version='0.1.0',
     description='MetaLens: Super-Resolved Spatial Metabolomics',
-    packages=find_packages(),
+    packages=['MetaLens'],
     python_requires='>=3.8',
     install_requires=[
         'numpy',

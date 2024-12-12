@@ -1,6 +1,12 @@
-# Data and model directories
+# Data and model directories - keep structure, ignore contents
 MetaLens/data/*
+!MetaLens/data/.gitkeep
+!MetaLens/data/training_data/
+MetaLens/data/training_data/*
+!MetaLens/data/training_data/.gitkeep
+
 MetaLens/models/*
+!MetaLens/models/.gitkeep
 
 # Python cache files
 __pycache__/

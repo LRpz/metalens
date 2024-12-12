@@ -211,3 +211,6 @@ wheezy.template==3.2.1
 wrapt==1.16.0
 yarl==1.9.4
 zipp @ file:///C:/b/abs_b9jfdr908q/croot/zipp_1672387552360/work
+napari[all]>=0.4.19
+magicgui>=0.8.2
+qtpy

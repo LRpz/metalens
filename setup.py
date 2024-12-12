@@ -1,10 +1,10 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(
     name='metalens',
     version='0.1.0',
     description='MetaLens: Super-Resolved Spatial Metabolomics',
-    packages=['MetaLens'],
+    packages=find_packages(),
     python_requires='>=3.8',
     install_requires=[
         'numpy',
@@ -28,7 +28,7 @@ setup(
     },
     entry_points={
         'napari.plugin': [
-            'metalens = MetaLens.napari.plugin',
+            'metalens = metalens.napari.plugin:napari_experimental_provide_dock_widget',
         ],
     },
     classifiers=[

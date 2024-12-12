@@ -1,6 +1,6 @@
 # Data and model directories
-MetaLens/data/
-MetaLens/models/
+MetaLens/data/*
+MetaLens/models/*
 
 # Python cache files
 __pycache__/
@@ -19,4 +19,7 @@ env/
 
 # IDE specific files
 .vscode/
-.idea/ 
+.idea/
+
+# Specific files to ignore
+data/am_eval.tif 

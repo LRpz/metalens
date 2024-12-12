@@ -1,0 +1,22 @@
+# Data and model directories
+MetaLens/data/
+MetaLens/models/
+
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+
+# Virtual environments
+venv/
+env/
+.env/
+
+# IDE specific files
+.vscode/
+.idea/ 

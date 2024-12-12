@@ -8,6 +8,11 @@ MetaLens/data/training_data/*
 MetaLens/models/*
 !MetaLens/models/.gitkeep
 
+# Explicitly exclude large files
+models/AM_segmentation.pth
+models/pretrained_model.ckpt
+data/eval_dataset.tif
+
 # Python cache files
 __pycache__/
 *.py[cod]

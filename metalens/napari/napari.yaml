@@ -3,7 +3,7 @@ display_name: MetaLens Viewer
 contributions:
   commands:
     - id: metalens-napari.widget
-      python_name: metalens.napari.plugin:MetaLensWidget
+      python_name: metalens.napari.plugin
       title: Make MetaLens Widget
   widgets:
     - command: metalens-napari.widget

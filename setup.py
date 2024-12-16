@@ -28,15 +28,7 @@ setup(
     },
     entry_points={
         'napari.plugin': [
-            'metalens = metalens.napari.plugin:napari_experimental_provide_dock_widget',
+            'metalens = metalens.napari.plugin',
         ],
     },
-    classifiers=[
-        'Development Status :: 3 - Alpha',
-        'Intended Audience :: Science/Research',
-        'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.8',
-        'Programming Language :: Python :: 3.9',
-        'Programming Language :: Python :: 3.10',
-    ],
 )

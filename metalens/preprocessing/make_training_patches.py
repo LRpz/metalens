@@ -1,3 +1,16 @@
+"""
+Training Patch Generation Script
+
+This script processes microscopy and mass spectrometry data to generate training patches
+for the MetaLens model. It handles image registration, ablation mark detection,
+and metabolite data extraction.
+
+Usage:
+    python make_training_patches.py <dataset_name>
+
+Example:
+    python make_training_patches.py sample_001
+"""
 from itertools import permutations
 import sys
 import matplotlib.pyplot as plt
@@ -16,33 +29,51 @@ import tqdm
 import re
 
 def convert_molecule_name(name):
-    # Find the molecular type
+    """
+    Convert complex molecular names to a simplified format.
+    
+    Args:
+        name (str): Original molecular name
+        
+    Returns:
+        str: Simplified molecular name in format 'Type(C:U)'
+        where C is total carbons and U is total unsaturations
+    """
     molecular_type_match = re.match(r'([A-Za-z]+)', name)
 
     if not molecular_type_match or str(name) == 'False':
         return ''
     
     molecular_type = molecular_type_match.group(0)
-
-    # Find all occurrences of 'digit+:digit+'
     parts = re.findall(r'(\d+):(\d+)', name)
-    if not parts:
-        return False  # Return the original name if no molecular type is found
     
-    # Sum the digits for carbons and unsaturations
+    if not parts:
+        return False
+    
     total_carbons = sum(int(carbon) for carbon, _ in parts)
     total_unsaturations = sum(int(unsaturation) for _, unsaturation in parts)
 
-    # Recompose the name
     return f'{molecular_type}({total_carbons}:{total_unsaturations})'
 
 def scale(arr):
+    """Min-max scale array to [0,1] range"""
     return (arr - np.min(arr)) / (np.max(arr) - np.min(arr))
 
 def contrast(arr, low, high):
+    """Apply contrast enhancement using percentile clipping"""
     return np.clip(arr, np.percentile(arr, low), np.percentile(arr, high))
 
 def line_intersection(line1, line2):
+    """
+    Calculate intersection point of two lines in Hesse normal form.
+    
+    Args:
+        line1 (tuple): (rho, theta) parameters of first line
+        line2 (tuple): (rho, theta) parameters of second line
+        
+    Returns:
+        list or None: [x, y] coordinates of intersection point, or None if parallel
+    """
     rho1, theta1 = line1
     rho2, theta2 = line2
     A = np.array([
@@ -52,17 +83,24 @@ def line_intersection(line1, line2):
     b = np.array([[rho1], [rho2]])
 
     if np.linalg.cond(A) < 1/sys.float_info.epsilon:
-        # A is not singular, solve the system
         x, y = np.linalg.solve(A, b)
         return [x[0], y[0]]
-    else:
-        # Lines are parallel or almost parallel
-        return None
+    return None
 
 def rotate(centroid_coords, rotation):
+    """
+    Rotate coordinates around their mean by given angle.
+    
+    Args:
+        centroid_coords (np.ndarray): Array of [x, y] coordinates
+        rotation (float): Rotation angle in degrees
+        
+    Returns:
+        np.ndarray: Rotated coordinates
+    """
     xe, ye = centroid_coords[:, 0], centroid_coords[:, 1]
-
     theta = rotation / 180. * np.pi
+    
     x_spots = np.mean(xe) + np.cos(theta) * (xe - np.mean(xe)) \
                 - np.sin(theta) * (ye - np.mean(ye))
     y_spots = np.mean(ye) + np.sin(theta) * (xe - np.mean(xe)) \
@@ -71,23 +109,22 @@ def rotate(centroid_coords, rotation):
     return np.array([x_spots, y_spots]).T
 
 def estimateAngle(centroid_coords, shape, Figures=False):
-    """Estimate the relative angle between the ablation marks and the X axis.
-    TODO: estimate in both X and Y and get average estimate. It might be more accurate
+    """
+    Estimate the relative angle between ablation marks and the X axis.
+    
     Args:
-        xe (array): X coordinates of the ablation marks (1D).
-        ye (array): Y coordinates of the ablation marks (1D).
-        shape (array): number of rows and columns of the MALDI acquisition (1D).
-        MFA (str): path to Main Folder Analysis.
-        Figures (bool): whether or not plot the results and save in analysis folder.
-
+        centroid_coords (np.ndarray): Array of [x, y] coordinates of ablation marks
+        shape (tuple): Number of rows and columns of the MALDI acquisition
+        Figures (bool): Whether to plot and save results
+        
     Returns:
-        rotation_deg (float): alignment rotation angle in degree to the X axis.
-
+        float: Alignment rotation angle in degrees
     """
     xe, ye = centroid_coords[:, 0], centroid_coords[:, 1]
     counts_x = []
     counts_y = []
     angle = []
+    
     for i in np.linspace(-10, 10, 5000):
         rotation = i
         theta = rotation / 180. * np.pi
@@ -95,51 +132,67 @@ def estimateAngle(centroid_coords, shape, Figures=False):
                     - np.sin(theta) * (ye - np.mean(ye))
         y_spots = np.mean(ye) + np.sin(theta) * (xe - np.mean(xe)) \
                     + np.cos(theta) * (ye - np.mean(ye))
+        
         a_x = np.histogram(x_spots, int(shape[0]) * 100)
         a_y = np.histogram(y_spots, int(shape[0]) * 100)
         count_x = np.asarray(a_x[0][a_x[0] > 0]).shape[0]
         count_y = np.asarray(a_y[0][a_y[0] > 0]).shape[0]
-        # print count, theta
+        
         angle.append(rotation)
         counts_x.append(count_x)
         counts_y.append(count_y)
-        # print '{}/{} deg'.format(i, 15)
+    
     rotation_deg_x = angle[np.where(counts_x == np.min(counts_x))[0][0]]
-    # rotation_deg_y = angle[np.where(counts_y == np.min(counts_y))[0][0]]
-    # rotation_deg = np.mean([rotation_deg_x,rotation_deg_y])
-    # print('Rough Rotation estimation is {} degree'.format(rotation_deg_x))
-    if Figures == True:
+    
+    if Figures:
         plt.figure()
         plt.plot(angle, counts_x, 'k')
         plt.plot(rotation_deg_x, np.min(counts_x), 'ro', markersize=15)
         plt.legend()
         plt.xlabel('Rotation angles (rad)', fontsize=15)
         plt.ylabel('Number of non-zero bins \nof data 1D projection', fontsize=15)
-        # plt.title('Angle Estimation: angle=%.3f degree' % (rotation_deg_x), fontsize=10)
-        # plt.close('all')
+    
     return rotation_deg_x
 
 def sample_one_line_per_cluster(data, n_clusters=70):
+    """
+    Sample one representative line from each cluster of lines.
+    
+    Args:
+        data (np.ndarray): Array of line parameters
+        n_clusters (int): Number of clusters to form
+        
+    Returns:
+        list: Sampled lines, one from each cluster
+    """
     kmeans = KMeans(n_clusters=n_clusters)
     labels = kmeans.fit_predict(data)
-
-    # Get centroids of the clusters
     centroids = kmeans.cluster_centers_
-
-    # Sort the centroids (example: based on the first coordinate)
+    
+    # Sort clusters by first coordinate
     sorted_cluster_indices = np.argsort(centroids[:, 0])
-
+    
     sampled_lines = []
     for idx in sorted_cluster_indices:
         lines_in_cluster = data[labels == idx]
         if len(lines_in_cluster) > 0:
-            sampled_lines.append(lines_in_cluster[0])  # sample the first line in each cluster
+            sampled_lines.append(lines_in_cluster[0])
+    
     return sampled_lines
 
 def apply_transformations(matrix, transformations):
+    """
+    Apply a sequence of geometric transformations to a matrix.
     
+    Args:
+        matrix (np.ndarray): Input matrix
+        transformations (list): List of transformation names
+        
+    Returns:
+        tuple: (transformed_matrix, transformation_function)
+    """
     tf = np.copy
-
+    
     for transform in transformations:
         if transform == 'flip_lr':
             tf = np.fliplr
@@ -149,13 +202,24 @@ def apply_transformations(matrix, transformations):
             tf = np.transpose
         
     return tf(matrix), tf
-    
-def find_transformation(source_matrix, target_matrix, figure=False):
-    # Function to compute spatial correlation
-    def compute_correlation(source, target):
-        return np.corrcoef(source.flatten(), target.flatten())[0, 1]
 
-    # Generate all unique and non-redundant combinations of transformations
+def find_transformation(source_matrix, target_matrix, figure=False):
+    """
+    Find the best geometric transformation to align two matrices.
+    
+    Args:
+        source_matrix (np.ndarray): Source matrix to transform
+        target_matrix (np.ndarray): Target matrix to match
+        figure (bool): Whether to plot comparison figures
+        
+    Returns:
+        tuple: (transformed_matrix, transformation_function, correlation)
+    """
+    def compute_correlation(source, target):
+        """Compute spatial correlation between two matrices"""
+        return np.corrcoef(source.flatten(), target.flatten())[0, 1]
+    
+    # Generate transformation combinations
     transformations = ['flip_lr', 'flip_ud', 'rotate90', 'rotate180', 'rotate270', 'transpose']
     all_combinations = []
     for r in range(len(transformations) + 1):
@@ -209,16 +273,17 @@ def find_transformation(source_matrix, target_matrix, figure=False):
 
 def filter_rows_by_zero_freq(df, threshold):
     """
-    Removes rows from the DataFrame where the frequency of zeros is above the given threshold.
-
-    :param df: DataFrame to filter.
-    :param threshold: Threshold for zero frequency (between 0 and 1).
-    :return: Filtered DataFrame.
-    """
-    zero_freq = (df == 0).sum(axis=1) / df.shape[1]
-    filtered_df = df[zero_freq <= threshold]
+    Remove rows from DataFrame where frequency of zeros exceeds threshold.
     
-    return filtered_df
+    Args:
+        df (pd.DataFrame): Input DataFrame
+        threshold (float): Maximum allowed frequency of zeros (0-1)
+        
+    Returns:
+        pd.DataFrame: Filtered DataFrame
+    """
+    zero_freq = (df == 0).mean(axis=1)
+    return df[zero_freq <= threshold]
 
 def plot_zero_frequency_histogram(df):
     """
@@ -257,8 +322,9 @@ def zscore_columns_with_nonzero_median(df):
     return zscored_df
 
 if __name__ == "__main__":
+    # Parse command line arguments
     if len(sys.argv) < 2:
-        print("Usage: make_training_patches.py <dataset_name>")
+        print("Usage: python make_training_patches.py <dataset_name>")
         sys.exit(1)
     
     sample = sys.argv[1]

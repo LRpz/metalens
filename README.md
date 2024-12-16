@@ -37,6 +37,10 @@ pip install -e .[napari]
 
 MetaLens provides a Napari plugin for interactive visualization and analysis. The plugin offers a user-friendly interface for model inference and results visualization. After installing MetaLens with Napari support, launch Napari and access the plugin through the `Plugins > MetaLens` menu.
 
+<p align="center">
+  <img src="docs/assets/napari-demo.gif" alt="MetaLens Napari Plugin Demo" width="800"/>
+</p>
+
 ## Training Data Preparation
 
 The training data necessary for model development can be obtained and prepared as follows:

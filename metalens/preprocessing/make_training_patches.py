@@ -329,11 +329,11 @@ if __name__ == "__main__":
     
     sample = sys.argv[1]
 
-    root = r'MetaLens\data\raw_data'
+    root = r'metaLens\data\raw_data'
     shape = (70, 70)
     imzML_root = root
     window_size = 64 # n pixels around the AM centroid (training patch size is window_size*2xwindow_size*2 pixels)
-    save_folder = r'MetaLens\data\training_data/'
+    save_folder = r'metaLens\data\training_data/'
 
     imzml_path = glob.glob(fr"{imzML_root}\{sample}.imzML")[0]
     cells = tif.imread(fr"{root}\{sample}_cells.tif")

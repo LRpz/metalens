@@ -1,0 +1,64 @@
+site_name: MetaLens Documentation
+site_description: Documentation for MetaLens - Super-Resolved Spatial Metabolomics
+repo_url: https://github.com/LRpz/metalens
+docs_dir: docs
+theme:
+  name: material
+  features:
+    - navigation.sections
+    - navigation.top
+    - search.highlight
+    - navigation.indexes
+    - toc.follow
+    - toc.integrate
+  palette:
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+  font:
+    text: Roboto
+    code: Roboto Mono
+  icon:
+    repo: fontawesome/brands/github
+
+nav:
+  - Overview: index.md
+  - Installation:
+      - Prerequisites: '#11-prerequisites'
+      - Step-by-Step Installation: '#12-step-by-step-installation'
+  - Using MetaLens:
+      - On Example Data: '#21-on-example-data'
+      - On New Data: '#22-on-new-data'
+      - Required Data Format: '#221-required-data-format'
+      - Preprocessing Pipeline: '#222-preprocessing-pipeline'
+      - Training: '#223-training'
+      - Inference: '#224-inference'
+  - Complete Pipeline Example: '#23-complete-pipeline-example'
+  - Directory Structure: '#24-expected-directory-structure'
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+      use_pygments: false
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences:
+      preserve_tabs: true
+      css_class: 'highlight'
+  - admonition
+  - pymdownx.details
+  - attr_list
+  - md_in_html
+  - def_list
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:materialx.emoji.twemoji
+      emoji_generator: !!python/name:materialx.emoji.to_svg
+
+extra_css:
+  - stylesheets/extra.css 

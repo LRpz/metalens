@@ -33,7 +33,7 @@ if __name__ == '__main__':
     learning_rate = 1e-3
     epochs = 200
     encoder = MODEL
-    in_chans = 4 
+    in_chans = 4
     test_size = 0.3
 
     # Define data transformations

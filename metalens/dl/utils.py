@@ -1,10 +1,16 @@
+"""
+Deep learning utilities for MetaLens.
+
+Provides the PyTorch Lightning model (ImageRegressor), the dataset class
+(ImageDataset), data augmentation helpers, and training/loading entry points.
+"""
 import os
 import albumentations as A
 import cv2
 import numpy as np
 import pandas as pd
 import pytorch_lightning as pl
-import timm
+# import timm
 import torch
 from albumentations.pytorch import ToTensorV2
 from lightning.pytorch.loggers import TensorBoardLogger
@@ -241,13 +247,11 @@ class ImageRegressor(pl.LightningModule):
 
     def adapt_input_model(self, in_channels):
         """
-        Adapts first layer to take a specified number of input channels.
-        
-        Args:
-            model: The segmentation model to be adapted.
+        Adapt the model's first convolutional layer to accept a non-standard
+        number of input channels by reusing pre-trained RGB weights.
 
-        Returns:
-            The adapted segmentation model.
+        Args:
+            in_channels (int): Number of input channels required by the model.
         """
         # Adapt first layer to take 1 channel as input - timm approach = sum weights
         new_weights = self.adapt_input_conv(in_chans=in_channels, conv_weight=self.model.encoder.patch_embed1.proj.weight)

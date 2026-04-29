@@ -1,3 +1,19 @@
+"""
+Inference utilities for MetaLens.
+
+Provides sliding-window prediction (pred_images), annotation loading
+(load_annotations), and HDF5 output (save_data). The __main__ entry point
+accepts a sample name and checkpoint path and writes predictions to
+data/output/output.h5.
+
+CLI usage::
+
+    python metalens/dl/eval.py <sample_name> <model_path>
+
+Example::
+
+    python metalens/dl/eval.py sample_001 models/best_model.ckpt
+"""
 import torch
 import os
 import sys
@@ -197,18 +213,6 @@ def save_data(data, h5_filepath):
 plt.style.use('default')
 
 if __name__ == "__main__":
-    """
-    Command-line interface for running inference on microscopy images.
-    
-    This script loads a trained model and runs inference on a single microscopy image,
-    predicting metabolite concentrations for each ablation mark.
-    
-    Usage:
-        python eval.py <dataset_name> <model_path>
-    
-    Example:
-        python eval.py sample_001 models/checkpoints/best_model.ckpt
-    """
     # Parse command line arguments
     if len(sys.argv) < 3:
         print("Usage: eval.py <dataset_name> <model_path>")

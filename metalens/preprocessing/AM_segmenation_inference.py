@@ -1,3 +1,19 @@
+"""
+Ablation mark segmentation inference script.
+
+Uses a pre-trained U-Net (mit_b5 encoder) with MONAI's SlidingWindowInferer
+to produce a pixel-wise probability map of ablation marks in a post-MALDI
+brightfield image. Sigmoid activation is applied so outputs are in [0, 1].
+
+CLI usage::
+
+    python metalens/preprocessing/AM_segmenation_inference.py <dataset_name>
+
+Input:  ``data/raw_data/<dataset_name>_ablation_marks_tf.tif``
+Output: ``data/raw_data/<dataset_name>_ablation_marks_tf_pred.tif``
+
+Requires the pre-trained weights at ``models/AM_segmentation.pth``.
+"""
 import glob
 import numpy as np
 import tifffile as tif

@@ -287,9 +287,10 @@ def filter_rows_by_zero_freq(df, threshold):
 
 def plot_zero_frequency_histogram(df):
     """
-    Plots a histogram of the frequency of zeros in each row of the DataFrame.
+    Plot a histogram of the frequency of zeros in each row of the DataFrame.
 
-    :param df: DataFrame to analyze.
+    Args:
+        df (pd.DataFrame): DataFrame to analyze.
     """
     zero_freq = (df == 0).sum(axis=1) / df.shape[1]
     plt.hist(zero_freq, bins=100)
@@ -300,11 +301,14 @@ def plot_zero_frequency_histogram(df):
 
 def zscore_columns_with_nonzero_median(df):
     """
-    Applies z-score normalization to each column of the DataFrame based on the median and standard deviation
-    of the non-zero values in each column.
+    Apply z-score normalization to each column using the median and standard
+    deviation of the non-zero values in that column.
 
-    :param df: DataFrame to normalize.
-    :return: DataFrame with normalized columns.
+    Args:
+        df (pd.DataFrame): DataFrame to normalize.
+
+    Returns:
+        pd.DataFrame: Normalized DataFrame.
     """
     zscored_df = pd.DataFrame()
     for col in df.columns:
@@ -329,17 +333,17 @@ if __name__ == "__main__":
     
     sample = sys.argv[1]
 
-    root = r'metaLens\data\raw_data'
+    root = os.path.join('data', 'raw_data')
     shape = (70, 70)
     imzML_root = root
-    window_size = 64 # n pixels around the AM centroid (training patch size is window_size*2xwindow_size*2 pixels)
-    save_folder = r'metaLens\data\training_data/'
+    window_size = 64  # pixels around the AM centroid; patch size = window_size*2 × window_size*2
+    save_folder = os.path.join('data', 'training_data')
 
-    imzml_path = glob.glob(fr"{imzML_root}\{sample}.imzML")[0]
-    cells = tif.imread(fr"{root}\{sample}_cells.tif")
-    bf = scale(tif.imread(fr"{root}\{sample}_ablation_marks_tf.tif"))
-    am_probability = tif.imread(fr"{root}\{sample}_ablation_marks_tf_pred.tif")
-    cell_mask = tif.imread(fr"{root}\{sample}_cells_mask.tif")
+    imzml_path = glob.glob(os.path.join(imzML_root, f'{sample}.imzML'))[0]
+    cells = tif.imread(os.path.join(root, f'{sample}_cells.tif'))
+    bf = scale(tif.imread(os.path.join(root, f'{sample}_ablation_marks_tf.tif')))
+    am_probability = tif.imread(os.path.join(root, f'{sample}_ablation_marks_tf_pred.tif'))
+    cell_mask = tif.imread(os.path.join(root, f'{sample}_cells_mask.tif'))
 
     # correct for microscope objective shift
     cells[..., 2] = np.roll(cells[..., 2], shift=3, axis=0)  # Shift down by 3 pixels
@@ -529,7 +533,7 @@ if __name__ == "__main__":
     os_matrix = os_matrix.reshape(shape)
     sc_matrix = sc_matrix.reshape(shape)
 
-    dsname = imzml_path.split('\\')[-1].split('.')[0]
+    dsname = os.path.splitext(os.path.basename(imzml_path))[0]
     p = ImzMLParser(imzml_path)
 
     tic = np.zeros(shape)
@@ -576,7 +580,16 @@ if __name__ == "__main__":
     from skimage import measure, morphology
 
     def mask_central_am(crop_am_prob):
+        """
+        Return a dilated binary mask isolating only the ablation mark closest
+        to the patch centre (suppresses neighbouring marks).
 
+        Args:
+            crop_am_prob (np.ndarray): Ablation mark probability map patch.
+
+        Returns:
+            np.ndarray: Boolean mask with only the central ablation mark.
+        """
         binary_image = crop_am_prob > 0.5
 
         labeled_image = measure.label(binary_image)
@@ -633,9 +646,9 @@ if __name__ == "__main__":
 
             if show_am_viz: plt.scatter(filtered_centroids[i, 1], filtered_centroids[i, 0], s=200, c=df_oi.iloc[i, j], cmap='magma', vmin=df_oi.iloc[:, j].min(), vmax=df_oi.iloc[:, j].max())
 
-            tif.imwrite(save_folder + rf'{sample}_{i}.tif', training_image.astype(np.float32))
+            tif.imwrite(os.path.join(save_folder, f'{sample}_{i}.tif'), training_image.astype(np.float32))
             df_oi.loc[i, 'filename'] = f'{sample}_{i}.tif'
 
-    df_oi[df_oi['filename'] != 'nan'].to_csv(save_folder + rf'ion_intensities.csv', index=False)
+    df_oi[df_oi['filename'] != 'nan'].to_csv(os.path.join(save_folder, 'ion_intensities.csv'), index=False)
 
     plt.close('all')

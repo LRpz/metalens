@@ -1,3 +1,17 @@
+"""
+Napari plugin for MetaLens.
+
+Registers MetaLensWidget as a Napari dock widget through the
+napari_experimental_provide_dock_widget hook. The widget exposes:
+
+- Load Microscopy Data — open a multi-channel TIFF into the viewer
+- Load Model — load a trained MetaLens checkpoint with annotation stats
+- Inference Parameters — evaluation range, step size, and batch size controls
+- Run Inference — sliding-window prediction with a live progress bar
+- Load Predictions — reload a previously saved HDF5 result file
+- Save Results — export current predictions as an HDF5 file
+- Display Parameters — Gaussian blur smoothing before rendering
+"""
 import napari
 import numpy as np
 from napari.layers import Image
@@ -17,6 +31,25 @@ from napari.utils import progress
 from napari.utils.notifications import show_info
 
 class MetaLensWidget(QWidget):
+    """
+    Main MetaLens dock widget for the Napari viewer.
+
+    Provides a complete GUI workflow: load microscopy data, load a trained
+    model, configure and run inference, then save or reload predictions.
+
+    Args:
+        napari_viewer (napari.Viewer): The active Napari viewer instance.
+
+    Attributes:
+        viewer (napari.Viewer): Reference to the parent viewer.
+        microscopy_data (np.ndarray or None): Currently loaded microscopy image.
+        model (torch.nn.Module or None): Loaded MetaLens regressor.
+        metabolites (list or None): Metabolite names from the annotation CSV.
+        am_test (np.ndarray or None): Ablation mark probability map.
+        annot_stats (tuple or None): (stds, means) annotation statistics.
+        current_predictions (np.ndarray or None): Most recent inference output.
+        current_metabolites (list or None): Metabolite names for current predictions.
+    """
     def __init__(self, napari_viewer):
         super().__init__()
         self.viewer = napari_viewer
@@ -129,7 +162,15 @@ class MetaLensWidget(QWidget):
         inference_group.setEnabled(False)  # Disable parameters until model is loaded
         
     def _load_microscopy(self):
-        """Load microscopy data and display in viewer"""
+        """
+        Open a file dialog to select a TIFF, load it into memory, and add each
+        channel as a separate Napari image layer. Also attempts to load the
+        ablation mark probability map from ``data/am_eval.tif``.
+
+        Side effects:
+            Sets ``self.microscopy_data`` and ``self.am_test``.
+            Enables the "Load Model" button on success.
+        """
         file_path, _ = QFileDialog.getOpenFileName(
             self, "Select Microscopy Data", "", "TIFF Files (*.tif *.tiff)"
         )
@@ -172,7 +213,15 @@ class MetaLensWidget(QWidget):
                 print(f"Error loading microscopy data: {str(e)}")
 
     def _load_model(self):
-        """Load the deep learning model"""
+        """
+        Open a file dialog to select a Lightning checkpoint (.ckpt), load
+        metabolite annotation statistics from ``data/training_data/``, and
+        initialise the ImageRegressor on the available device (CUDA or CPU).
+
+        Side effects:
+            Sets ``self.model``, ``self.metabolites``, and ``self.annot_stats``.
+            Enables the "Run Inference" button and inference parameter controls.
+        """
         file_path, _ = QFileDialog.getOpenFileName(
             self, "Select Model Checkpoint", "", "Checkpoint Files (*.ckpt)"
         )
@@ -200,7 +249,18 @@ class MetaLensWidget(QWidget):
                 print(f"Error loading model: {str(e)}")
 
     def _run_inference(self):
-        """Run inference and display results"""
+        """
+        Run sliding-window inference using the loaded model and microscopy data.
+
+        Reads ``eval_range``, ``step_size``, and ``batch_size`` from the GUI
+        controls, displays a Napari progress bar, and calls ``pred_images``.
+        Predictions are added as individual image layers (one per metabolite)
+        and stored in ``self.current_predictions``.
+
+        Side effects:
+            Populates the viewer with prediction layers.
+            Enables the "Save Results" button.
+        """
         if self.microscopy_data is None or self.model is None:
             print("Please load both microscopy data and model first")
             return
@@ -257,7 +317,16 @@ class MetaLensWidget(QWidget):
             print(f"Error during inference: {str(e)}")
 
     def _load_predictions(self):
-        """Load existing predicted metabolite data and display in viewer"""
+        """
+        Open a file dialog to select an HDF5 file produced by a previous run
+        and add each metabolite prediction as a Napari image layer.
+
+        Expected HDF5 keys: ``pred`` (H × W × N array) and ``metabolites`` (N names).
+
+        Side effects:
+            Sets ``self.current_predictions`` and ``self.current_metabolites``.
+            Enables the "Save Results" button.
+        """
         file_path, _ = QFileDialog.getOpenFileName(
             self, "Select Predicted Metabolite Data", "", "HDF5 Files (*.h5)"
         )
@@ -281,7 +350,12 @@ class MetaLensWidget(QWidget):
                 print(f"Error loading predictions: {str(e)}")
 
     def _save_results(self):
-        """Save current predictions to HDF5 file"""
+        """
+        Open a file dialog and write ``self.current_predictions`` together with
+        ``self.current_metabolites`` to an HDF5 file chosen by the user.
+
+        HDF5 keys written: ``pred`` and ``metabolites``.
+        """
         if self.current_predictions is None:
             print("No predictions to save")
             return
@@ -307,11 +381,31 @@ class MetaLensWidget(QWidget):
                 print(f"Error saving results: {str(e)}")
 
     def _apply_gamma(self, image, gamma=2.0):
-        """Apply gamma correction to image"""
+        """
+        Apply gamma correction (power-law transformation) to an image.
+
+        Args:
+            image (np.ndarray): Input image with values in [0, 1].
+            gamma (float): Gamma value. Values > 1 brighten the image.
+
+        Returns:
+            np.ndarray: Gamma-corrected image.
+        """
         return np.power(image, 1/gamma)
 
     def _display_predictions(self, predictions, metabolites, prefix=""):
-        """Display predictions in the viewer"""
+        """
+        Scale each metabolite channel and add it as a Napari image layer.
+
+        Scaling excludes a 100-pixel border and applies a log10 power
+        transformation to enhance contrast. Gaussian blur is applied if the
+        GUI sigma control is non-zero.
+
+        Args:
+            predictions (np.ndarray): Shape (H, W, N) prediction array.
+            metabolites (list): Metabolite name for each channel (may be bytes).
+            prefix (str): Optional prefix for layer names (e.g. ``"Loaded_"``).
+        """
         def scale_prediction(image, border=100):
             """Scale prediction excluding border, then apply power transformation"""
             # Create mask excluding border

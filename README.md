@@ -58,7 +58,7 @@ python -m napari
 # Then: Plugins > MetaLens Viewer
 ```
 
-For full installation instructions, dataset downloads, and pipeline usage see the **[User Guide](https://lrpz.github.io/metalens/user_guide/)**.
+For full installation instructions, dataset downloads, and pipeline usage see the **[User Guide](https://github.com/LRpz/metalens/blob/main/docs/user_guide.md)**.
 
 ## Repository Structure
 

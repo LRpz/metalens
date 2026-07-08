@@ -1,0 +1,73 @@
+/* Code block styling */
+.highlight {
+    background: #1e1e1e !important;
+    color: #d4d4d4;
+    padding: 1em;
+    border-radius: 4px;
+    margin: 1em 0;
+}
+
+.highlight code {
+    font-family: 'Roboto Mono', monospace !important;
+    font-size: 0.85em;
+    line-height: 1.5;
+}
+
+/* Inline code */
+code {
+    background: #2b2b2b;
+    padding: 0.2em 0.4em;
+    border-radius: 3px;
+    font-size: 85%;
+    font-family: 'Roboto Mono', monospace;
+}
+
+/* Parameter styling */
+.param {
+    background: #2b2b2b;
+    padding: 2px 5px;
+    border-radius: 3px;
+    font-family: 'Roboto Mono', monospace;
+    color: #9cdcfe;
+}
+
+/* Command line */
+.command-line-prompt {
+    border-right: 1px solid #404040;
+    margin-right: 1em;
+    padding-right: 1em;
+    user-select: none;
+}
+
+/* Section headers */
+h2 {
+    color: #ffffff;
+    font-weight: 400;
+    margin-top: 2em;
+    border-bottom: 1px solid #404040;
+    padding-bottom: 0.3em;
+}
+
+h3 {
+    color: #ffffff;
+    font-weight: 400;
+    margin-top: 1.5em;
+}
+
+/* Parameter descriptions */
+.param-desc {
+    margin-left: 20px;
+    color: #a0a0a0;
+}
+
+/* Note blocks */
+.admonition.note {
+    background-color: #2b2b2b;
+    border-left: 4px solid #448aff;
+}
+
+/* Dark theme adjustments */
+[data-md-color-scheme="slate"] {
+    --md-default-bg-color: #1e1e1e;
+    --md-code-bg-color: #2b2b2b;
+} 
